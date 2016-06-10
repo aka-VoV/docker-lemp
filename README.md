@@ -61,12 +61,12 @@ container (`/var/lib/mysql`)
 
 You can access container terminal like this:
 
-    docker exec -ti web-server su docker
+    docker exec -ti web-server env TERM=xterm su docker
 
 It logs you in the container as special user `docker`, witch can work with source code and console commands.
 
 But if you need `root` privileges, run:
 
-    docker exec -ti web-server bash
+    docker exec -ti web-server env TERM=xterm bash
 
 It logs you in as `root`
