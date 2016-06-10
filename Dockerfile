@@ -3,11 +3,56 @@ FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
 
 ## Install php nginx mysql supervisor
-RUN apt update && \
-    apt install -y php-fpm php-cli php-gd php-mcrypt php-mysql php-curl \
+RUN apt-get update && \
+    apt-get -y -q --no-install-recommends install -y php-fpm php-cli php-gd php-mcrypt php-mysql php-curl \
+                       php-intl \
+                       php-imagick \
+                       php-json \
+                       php-pear \
+                       php-dev \
+                       php7.0-sqlite \
                        nginx \
                        curl \
+                       mysql-server \
+                       mysql-client \
+                       unzip \
+                       sudo \
+                       nano \
+                       ssh \
+                       bash-completion \
+                       openssl \
+                       ca-certificates \
+                       wget \
+                       git \
+                       phpmyadmin php-mbstring php-gettext \
 		       supervisor && \
+
+		       # install composer
+               	curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+
+               # add user "docker" to use it as default user for working with files
+               	yes "" | adduser --uid=1000 --disabled-password docker && \
+               	echo "docker   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+
+               # install composer assets plugin
+               	sudo -H -u docker bash -c "/usr/local/bin/composer global require fxp/composer-asset-plugin:~1.1.3" && \
+
+               # create and set access to the folder
+               	mkdir -p /web/docker && \
+               	echo "<?php echo 'web server is running';" > /web/docker/index.php && \
+               	chown -R docker:docker /web && \
+
+               	# add custom php configuration
+                	phpenmod custom && \
+
+                # enable mcrypt module
+                	phpenmod mcrypt && \
+
+               	# set access and error nginx logs to stdout and stderr
+                	ln -sf /dev/stdout /var/log/nginx/access.log && \
+                	ln -sf /dev/stderr /var/log/nginx/error.log && \
+
+
     echo "mysql-server mysql-server/root_password password" | debconf-set-selections && \
     echo "mysql-server mysql-server/root_password_again password" | debconf-set-selections && \
     apt install -y mysql-server && \
@@ -21,10 +66,10 @@ RUN sed -i 's/^listen\s*=.*$/listen = 127.0.0.1:9000/' /etc/php/7.0/fpm/pool.d/w
 
 COPY files/root /
 
-WORKDIR /var/www/
+WORKDIR /web
 
-VOLUME /var/www/
+VOLUME ["/web", "/var/lib/mysql"]
 
-EXPOSE 80
+EXPOSE 80 443 3306 9000
 
 ENTRYPOINT ["/entrypoint.sh"]

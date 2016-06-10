@@ -1,27 +1,72 @@
 docker-lemp
 ===========
 
-[![Docker Stars](https://img.shields.io/docker/stars/stenote/docker-lemp.svg)](https://hub.docker.com/r/stenote/docker-lemp/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/stenote/docker-lemp.svg)](https://hub.docker.com/r/stenote/docker-lemp/)
+## Features:
 
+1. Nginx is configured to automatically resolve all domains ending with `.dev`.
+It is very convenient: you can simply create the directory `test-app` (domain name without `.dev`) in the
+web document root and it will be available by the link `http://test-app.dev/` (NOTICE: it requires some preliminary
+configuration, see #additional software for detailed information).
 
-We suppose this is a develop environment for phpers.
+2. MySQL 5.7
+   * user: root
+   * (No password)
 
-Don't use it in product environment.
+2. Pre-installed `composer` (with assets plugin), `git`, `phpmyadmin` (by default, automatic login
+as `root` without password).
 
-# Usage
+3. It stores source codes and mysql data on the host machine, therefore, you don't need to deploy your app each
+time you start the container.
 
-    docker run -d --name=lemp \
-      -v /path/to/www/:/var/www/ \
-      -v /path/to/mysql:/var/lib/mysql \
-      -p port_of_nginx:80 \
-      stenote/docker-lemp:latest
+4. Php process run by user with UID 1000 (by default, the same UID as your host machine user),
+thus it can access all files. At the same time, you have all permissions for generated files.
 
-# Detail
+# How to use this image
 
-## MySQL
-* user: root
-* (No password)
+## additional software
 
-## SSH
-We don't support SSH right now. You can use `docker exec` to enter the docker container.
+For comfortable work, I suggest you to use [dnsmasq](https://en.wikipedia.org/wiki/Dnsmasq) for automatic resolving of such domains as `http://*.dev/`.
+You can install it in Ubuntu this way (run as `root`):
+
+    apt-get install dnsmasq
+    echo "address=/.dev/127.0.0.1" >> /etc/dnsmasq.conf
+
+By default container binds `80` port on local `127.0.0.1:80`. If you are using another binding, change the
+ip address in the previous code to the one you use.
+
+Another variant is to update `/etc/hosts` manually, each time adding something like this:
+
+    127.0.0.1   my-app.dev
+
+## how to run container
+
+First of all, you need install [Docker](https://www.docker.com/) on your machine. All command need run as root or you
+need add your user to docker group.
+
+    docker run -d --name=web-server -v ~/work/www:/web -v ~/work/mysql:/var/lib/mysql -p 127.0.0.1:80:80 tolik505/docker-lemp
+
+`--name=web-server` set container name, for simple access to it in the future: you can start, restart and
+stop the created container using its name: `docker start web-server`
+
+`-p 127.0.0.1:80:80` bind the port `80` of the container to the port `80` on the host machine (on 127.0.0.1 localhost)
+
+`-v ~/work/mysql:/var/lib/mysql` bind mount a volume of mysql data directory from host machine (`~/work/mysql`) to
+container (`/var/lib/mysql`)
+
+`-v /work/www:/web` bind mount a volume of source codes from host machine (`/var/www`) to container (`/web`)
+
+`-d` detached mode: run the container in the background and print the new container ID
+
+## how to access container terminal
+
+You can access container terminal like this:
+
+    docker exec -ti web-server su docker
+
+It logs you in the container as special user `docker`, witch can work with source code and console commands.
+
+But if you need `root` privileges, run:
+
+    docker exec -ti web-server bash
+
+It logs you in as `root`
