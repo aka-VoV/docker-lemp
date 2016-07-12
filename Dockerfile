@@ -71,5 +71,3 @@ WORKDIR /web
 VOLUME ["/web", "/var/lib/mysql"]
 
 EXPOSE 80 443 3306 9000
-
-ENTRYPOINT ["/entrypoint.sh"]
