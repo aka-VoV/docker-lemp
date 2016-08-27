@@ -1,6 +1,7 @@
 FROM ubuntu:16.04
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV TERM xterm
 
 ## Install php nginx mysql supervisor
 RUN apt-get update && \
@@ -47,10 +48,6 @@ RUN apt-get update && \
 
                 # enable mcrypt module
                 	phpenmod mcrypt && \
-
-               	# set access and error nginx logs to stdout and stderr
-                	ln -sf /dev/stdout /var/log/nginx/access.log && \
-                	ln -sf /dev/stderr /var/log/nginx/error.log && \
 
 
     echo "mysql-server mysql-server/root_password password" | debconf-set-selections && \
